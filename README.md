@@ -29,7 +29,8 @@ Documentation
 
 [andivionian-status-classifier]: https://github.com/ForNeVeR/andivionian-status-classifier#status-zero-
 [cnc3]: https://cnc.fandom.com/wiki/Command_%26_Conquer_3:_Kane%27s_Wrath
-[code-of-conduct]: CODE_OF_CONDUCT.md
+[docs.code-of-conduct]: CODE_OF_CONDUCT.md
+[docs.license]: LICENSE.md
 [fornever]: https://github.com/ForNeVeR/
 [issues]: https://github.com/ForNeVeR/Hammerfest/issues
 [opensage]: https://github.com/OpenSAGE/OpenSAGE
