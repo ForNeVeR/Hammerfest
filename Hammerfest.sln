@@ -18,6 +18,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hammerfest.Server.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hammerfest.TestFramework", "Hammerfest.TestFramework\Hammerfest.TestFramework.csproj", "{4A3B1C28-1DFB-49B1-BA09-7D07C9B29959}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{DD5987B8-455F-49A6-A7BB-88D45B29AD30}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{7AA10576-D797-4C87-8F4D-0ED558D51E90}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\main.yml = .github\workflows\main.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,5 +46,8 @@ Global
 		{4A3B1C28-1DFB-49B1-BA09-7D07C9B29959}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A3B1C28-1DFB-49B1-BA09-7D07C9B29959}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A3B1C28-1DFB-49B1-BA09-7D07C9B29959}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7AA10576-D797-4C87-8F4D-0ED558D51E90} = {DD5987B8-455F-49A6-A7BB-88D45B29AD30}
 	EndGlobalSection
 EndGlobal
