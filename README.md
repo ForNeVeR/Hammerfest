@@ -8,6 +8,21 @@ Implementation Status
 
 Currently, we are still at the exploration stage; scope of work is to be determined. Visit [the issue tracker][issues] if you want to know more.
 
+Usage
+-----
+
+Currently Hammerfest is only suitable for development mode, and only on Windows.
+
+To start the server:
+
+```console
+$ dotnet run --project Hammerfest.Server
+```
+
+It will temporarily override the contents of `%SystemRoot%\System32\drivers\etc\hosts` file, adding the server host to it.
+
+Press `Ctrl+C` to terminate the server.
+
 Legal Disclaimers
 -----------------
 
