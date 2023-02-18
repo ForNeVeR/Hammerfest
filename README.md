@@ -13,10 +13,12 @@ Usage
 
 Currently Hammerfest is only suitable for development mode, and only on Windows.
 
+**⚠ For now, the administrator privileges are required to run the server, since it modifies the system `hosts` file.**
+
 To start the server:
 
 ```console
-$ dotnet run --project Hammerfest.Server
+# dotnet run --project Hammerfest.Server
 ```
 
 It will temporarily override the contents of `%SystemRoot%\System32\drivers\etc\hosts` file, adding the server host to it.
