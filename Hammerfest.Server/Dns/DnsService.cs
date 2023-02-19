@@ -1,8 +1,9 @@
 using Hammerfest.Server.Env;
+using Microsoft.Extensions.Options;
 
 namespace Hammerfest.Server.Dns;
 
-public record DnsService(ILogger<DnsService> Logger, ISystemEnvironment Environment) : IHostedService
+public record DnsService(ILogger<DnsService> Logger, IOptions<DnsOptions> Options, ISystemEnvironment Environment) : IHostedService
 {
     public const string ServServ = "servserv.generals.ea.com";
     private const string ServerIp = "127.0.0.1";
@@ -13,6 +14,8 @@ public record DnsService(ILogger<DnsService> Logger, ISystemEnvironment Environm
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        if (!Options.Value.Enabled) return Task.CompletedTask;
+
         var entry = HostsFile.FindIpAddress(Environment, ServServ);
         if (entry != ServerIp)
         {

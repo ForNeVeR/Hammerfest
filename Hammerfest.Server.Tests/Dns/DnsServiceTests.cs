@@ -1,6 +1,7 @@
 using Hammerfest.Server.Dns;
 using Hammerfest.TestFramework;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace Hammerfest.Server.Tests.Dns;
 
@@ -12,7 +13,10 @@ public sealed class DnsServiceTests : IDisposable
     public DnsServiceTests()
     {
         _environment.HostsFilePath = Path.GetTempFileName();
-        _service = new DnsService(NullLogger<DnsService>.Instance, _environment);
+        _service = new DnsService(
+            NullLogger<DnsService>.Instance,
+            Options.Create(new DnsOptions { Enabled = true  }),
+            _environment);
     }
 
     public void Dispose()
