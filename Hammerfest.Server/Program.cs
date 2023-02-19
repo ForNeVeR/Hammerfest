@@ -7,7 +7,7 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((builder, services) =>
     {
         services
-            .Configure<DnsOptions>("Dns", builder.Configuration);
+            .Configure<DnsOptions>(builder.Configuration.GetSection("Dns"));
 
         services
             .AddSingleton<ISystemEnvironment, WindowsEnvironment>()
