@@ -6,7 +6,7 @@ Hammerfest is a project to implement a lobby server for [Command & Conquer 3: Ka
 Implementation Status
 ---------------------
 
-Wew are on the stage when the game is able to show the login screen.
+We are on the stage when the game is able to show the login screen.
 
 Overall, we are still more at the exploration stage; scope of work is to be determined.
 
