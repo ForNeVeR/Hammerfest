@@ -32,6 +32,7 @@ The server performs the following operations:
 
   Pass `false` in the `Dns.Enable` configuration file if this is unwanted.
 - Starts a ServServ HTTP implementation on port `80`.
+- Starts a GameSpy Query Report server on port `27900`.
 
 Press `Ctrl+C` to terminate the server.
 
@@ -59,12 +60,15 @@ Acknowledgments
 
 - Thanks to the [OpenSAGE][open-sage] project for some ideas on the wording in the **Legal Disclaimers** section.
 - Thanks to the [GenServer][gen-server] project for documenting their ServServ implementation.
+- Thanks to the [GameProgressive][game-progressive] project for their [GameSpyDocs][game-spy-docs].
 
 [andivionian-status-classifier]: https://github.com/ForNeVeR/andivionian-status-classifier#status-zero-
 [cnc3]: https://cnc.fandom.com/wiki/Command_%26_Conquer_3:_Kane%27s_Wrath
 [docs.code-of-conduct]: CODE_OF_CONDUCT.md
 [docs.license]: LICENSE.md
 [fornever]: https://github.com/ForNeVeR/
+[game-progressive]: https://github.com/GameProgressive
+[game-spy-docs]: https://github.com/GameProgressive/GameSpyDocs
 [gen-server]: https://github.com/SySAttic/GenServer
 [issues]: https://github.com/ForNeVeR/Hammerfest/issues
 [open-sage]: https://github.com/OpenSAGE/OpenSAGE

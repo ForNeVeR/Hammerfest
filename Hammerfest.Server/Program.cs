@@ -1,3 +1,4 @@
+using Hammerfest.GameSpy;
 using Hammerfest.Server.Dns;
 using Hammerfest.Server.Env;
 using Hammerfest.Server.ServServ;
@@ -11,7 +12,8 @@ var host = Host.CreateDefaultBuilder(args)
 
         services
             .AddSingleton<ISystemEnvironment, WindowsEnvironment>()
-            .AddHostedService<DnsService>();
+            .AddHostedService<DnsService>()
+            .AddGameSpyServices();
     })
     .Build();
 
