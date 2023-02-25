@@ -5,24 +5,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Hammerfest.GameSpy.QueryReport;
 
-internal record QueryReportServer(ILogger<QueryReportServer> Logger) : IHostedService
+public record QueryReportServer(ILogger<QueryReportServer> Logger) : IHostedService, IDisposable
 {
-    private const int QrPort = 27900;
+    public const int Port = 27900;
     private static readonly Encoding Encoding = Encoding.UTF8;
 
     // Last byte 0x00 = Available
     private static ReadOnlyMemory<byte> AvailableResponse => new byte[] { 0xFE, 0xFD, 0x09, 0x00, 0x00, 0x00, 0x00 };
 
-    private UdpClient? _udpClient;
-    private CancellationTokenSource? _cts;
+    private readonly UdpClient _udpClient = new(Port);
+    private readonly CancellationTokenSource _cts = new();
     private Task? _listenerTask;
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _udpClient = new UdpClient(QrPort);
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        Logger.LogInformation("Starting listener on port {Port}.", QrPort);
-
+        Logger.LogInformation("Starting listener on port {Port}.", Port);
         _listenerTask = StartListening(_udpClient, _cts.Token);
         return Task.CompletedTask;
     }
@@ -30,31 +27,59 @@ internal record QueryReportServer(ILogger<QueryReportServer> Logger) : IHostedSe
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         Logger.LogInformation("Stopping service.");
-        _cts?.Cancel();
+        _cts.Cancel();
         if (_listenerTask != null)
-            await _listenerTask;
+        {
+            try
+            {
+                await _listenerTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected to be thrown.
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _udpClient.Dispose();
     }
 
     private async Task StartListening(UdpClient udp, CancellationToken cancellation)
     {
-        while (!cancellation.IsCancellationRequested)
+        try
         {
-            var datagram = await udp.ReceiveAsync(cancellation);
-            try
+            while (!cancellation.IsCancellationRequested)
             {
-                if (Logger.IsEnabled(LogLevel.Trace))
+                try
                 {
-                    Logger.LogTrace("Message received from client {Client}:\n{Message}",
-                        datagram.RemoteEndPoint, FormatDatagram(datagram.Buffer));
-                }
+                    var datagram = await udp.ReceiveAsync(cancellation);
+                    try
+                    {
+                        if (Logger.IsEnabled(LogLevel.Trace))
+                        {
+                            Logger.LogTrace("Message received from client {Client}:\n{Message}",
+                                datagram.RemoteEndPoint, FormatDatagram(datagram.Buffer));
+                        }
 
-                await ProcessDatagram(udp, datagram, cancellation);
+                        await ProcessDatagram(udp, datagram, cancellation);
+                    }
+                    catch (Exception e) when (e is not OperationCanceledException)
+                    {
+                        Logger.LogWarning(e, "Exception during datagram processing ({Length}) from client {Client}.",
+                            datagram.Buffer.Length, datagram.RemoteEndPoint);
+                    }
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    Logger.LogWarning(e, "Error when reading from socket.");
+                }
             }
-            catch (Exception e)
-            {
-                Logger.LogError(e, "Exception during datagram processing ({Length}) from client {Client}.",
-                    datagram.Buffer.Length, datagram.RemoteEndPoint);
-            }
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            Logger.LogCritical(e, "Total failure while processing the socket reader.");
         }
     }
 
