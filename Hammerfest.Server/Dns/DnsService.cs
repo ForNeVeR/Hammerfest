@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Hammerfest.Server.Env;
 using Microsoft.Extensions.Options;
 
@@ -5,7 +6,11 @@ namespace Hammerfest.Server.Dns;
 
 public record DnsService(ILogger<DnsService> Logger, IOptions<DnsOptions> Options, ISystemEnvironment Environment) : IHostedService
 {
-    public const string ServServ = "servserv.generals.ea.com";
+    public static ImmutableArray<string> Domains = ImmutableArray.Create(
+        "servserv.generals.ea.com",
+        "cc3xp1.available.gamespy.com"
+    );
+
     private const string ServerIp = "127.0.0.1";
 
     private readonly object _stateLock = new();
@@ -16,22 +21,25 @@ public record DnsService(ILogger<DnsService> Logger, IOptions<DnsOptions> Option
     {
         if (!Options.Value.Enabled) return Task.CompletedTask;
 
-        var entry = HostsFile.FindIpAddress(Environment, ServServ);
-        if (entry != ServerIp)
+        foreach (var domain in Domains)
         {
-            if (entry != null)
-                HostsFile.ReplaceEntry(Environment, ServerIp, ServServ);
-            else
-                HostsFile.AddEntry(Environment, ServerIp, ServServ);
-
-            Logger.LogInformation(
-                """Temporarily wrote entry for host "{Host}" in file "{HostFile}" with address "{IpAddress}".""",
-                ServServ, Environment.HostsFilePath, ServerIp);
-
-            lock (_stateLock)
+            var entry = HostsFile.FindIpAddress(Environment, domain);
+            if (entry != ServerIp)
             {
-                _previousIpAddress = entry;
-                _hostsFileChanged = true;
+                if (entry != null)
+                    HostsFile.ReplaceEntry(Environment, ServerIp, domain);
+                else
+                    HostsFile.AddEntry(Environment, ServerIp, domain);
+
+                Logger.LogInformation(
+                    """Temporarily wrote entry for host "{Host}" in file "{HostFile}" with address "{IpAddress}".""",
+                    domain, Environment.HostsFilePath, ServerIp);
+
+                lock (_stateLock)
+                {
+                    _previousIpAddress = entry;
+                    _hostsFileChanged = true;
+                }
             }
         }
 
@@ -49,7 +57,8 @@ public record DnsService(ILogger<DnsService> Logger, IOptions<DnsOptions> Option
 
         var status = previousIpAddress != null
             ? HostsFile.ReplaceEntry(Environment, ServerIp, previousIpAddress)
-            : HostsFile.RemoveEntry(Environment, ServServ);
+            : true; //HostsFile.RemoveEntry(Environment, ServServ);
+            // TODO: Proper multi-rollback
         if (!status)
         {
             Logger.LogWarning(

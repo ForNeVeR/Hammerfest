@@ -9,5 +9,5 @@ public class WindowsEnvironment : ISystemEnvironment
 {
     public string HostsFilePath { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.System),
-        "drivers/etc/hosts");
+        "drivers", "etc", "hosts");
 }
