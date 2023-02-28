@@ -12,7 +12,7 @@ public static class HostsFile
     ///     Overrides the local hosts file.
     /// </summary>
     /// <param name="env">The <see cref="ISystemEnvironment" /> to modify hosts file in</param>
-    /// <param name="valuesToSet">
+    /// <param name="entriesToSet">
     ///     The <see cref="IReadOnlyDictionary{TKey,TValue}" /> of new DNS entries, where the key is considered the host
     ///     and the value is considered its IP address. Null as the entry value indicates that entry is to be deleted
     /// </param>
@@ -26,11 +26,11 @@ public static class HostsFile
     ///     to reuse the method on the rollback.
     /// </remarks>
     public static Dictionary<string, string?> ModifyEntries(ISystemEnvironment env, IReadOnlyDictionary<string, string?>
-        valuesToSet)
+        entriesToSet)
     {
-        if (valuesToSet.Count == 0) return new Dictionary<string, string?>();
+        if (entriesToSet.Count == 0) return new Dictionary<string, string?>();
 
-        var newValues = new Dictionary<string, string?>(valuesToSet);
+        var newEntries = new Dictionary<string, string?>(entriesToSet);
         var originalLines = File.ReadAllLines(env.HostsFilePath);
         var resultLines = new List<string>();
         var originalEntries = new Dictionary<string, string?>();
@@ -41,17 +41,17 @@ public static class HostsFile
             switch (parsedLine)
             {
                 case var (oldIp, host) when IsAlreadyPresent(host, oldIp):
-                    resultLines.Add($"{newValues[host]} {host}");
-                    newValues.Remove(host);
+                    resultLines.Add($"{newEntries[host]} {host}");
+                    newEntries.Remove(host);
                     break;
                 case var (oldIp, host) when IsReplacement(host):
-                    resultLines.Add($"{newValues[host]} {host}");
+                    resultLines.Add($"{newEntries[host]} {host}");
                     originalEntries.Add(host, oldIp);
-                    newValues.Remove(host);
+                    newEntries.Remove(host);
                     break;
                 case var (oldIp, host) when IsDeletion(host):
                     originalEntries.Add(host, oldIp);
-                    newValues.Remove(host);
+                    newEntries.Remove(host);
                     break;
                 default:
                     resultLines.Add(line);
@@ -59,30 +59,30 @@ public static class HostsFile
             }
         }
 
-        foreach (var (host, ip) in newValues)
+        foreach (var (host, ip) in newEntries) // Only the additions remain here at this point.
         {
             resultLines.Add($"{ip} {host}");
             originalEntries.Add(host, null);
         }
 
-        if (originalEntries.Count != 0)
+        if (originalEntries.Count != 0) // If no entry is going to be modified, then avoid bothering file system.
             File.WriteAllLines(env.HostsFilePath, resultLines);
 
         return originalEntries;
 
         bool IsReplacement(string host)
         {
-            return newValues.ContainsKey(host) && newValues[host] is not null;
+            return newEntries.ContainsKey(host) && newEntries[host] is not null;
         }
 
         bool IsDeletion(string host)
         {
-            return newValues.ContainsKey(host) && newValues[host] is null;
+            return newEntries.ContainsKey(host) && newEntries[host] is null;
         }
 
         bool IsAlreadyPresent(string host, string ip)
         {
-            return newValues.TryGetValue(host, out var newIp) && newIp == ip;
+            return newEntries.TryGetValue(host, out var newIp) && newIp == ip;
         }
     }
 
