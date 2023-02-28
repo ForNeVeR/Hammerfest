@@ -7,51 +7,22 @@ namespace Hammerfest.Server.Tests.Dns;
 public class HostsFileTests
 {
     [Fact]
-    public void FindIpAddressWorks()
-    {
-        DoTest("""
-        ::1 address
-        """, env =>
-        {
-            Assert.Equal("::1", HostsFile.FindIpAddress(env, "address"));
-        });
-    }
-
-    [Fact]
-    public void FindIpAddressSkipsComments()
-    {
-        DoTest("""
-        #::1 address
-        """, env =>
-        {
-            Assert.Null(HostsFile.FindIpAddress(env, "address"));
-        });
-    }
-
-    [Fact]
-    public void FindIpAddressReturnsNull()
-    {
-        DoTest("""
-        ::1 address
-        """, env =>
-        {
-            Assert.Null(HostsFile.FindIpAddress(env, "address2"));
-        });
-    }
-
-    [Fact]
-    public void AddEntryWorks()
+    public void ModifyEntriesAddsEntries()
     {
         DoTest("", env =>
         {
-            HostsFile.AddEntry(env, "::1", "testy");
+            HostsFile.ModifyEntries(env, new Dictionary<string, string?>
+                {
+                    ["testy"] = "::1"
+                }
+            );
         }, """
         ::1 testy
         """);
     }
 
     [Fact]
-    public void ReplaceEntryWorks()
+    public void ModifyEntriesReplacesEntries()
     {
         DoTest("""
         ::1 address1
@@ -59,7 +30,10 @@ public class HostsFileTests
         ::1 address3
         """, env =>
         {
-            HostsFile.ReplaceEntry(env, "::2", "address2");
+            HostsFile.ModifyEntries(env, new Dictionary<string, string?>
+            {
+                ["address2"] = "::2"
+            });
         }, """
         ::1 address1
         ::2 address2
@@ -68,7 +42,7 @@ public class HostsFileTests
     }
 
     [Fact]
-    public void ReplaceEntryRemovesComments()
+    public void ModifyEntriesRemovesCommentsOnReplace()
     {
         DoTest("""
         ::1 address1
@@ -76,7 +50,10 @@ public class HostsFileTests
         ::1 address3
         """, env =>
         {
-            HostsFile.ReplaceEntry(env, "::2", "address2");
+            HostsFile.ModifyEntries(env, new Dictionary<string, string?>
+            {
+                ["address2"] = "::2"
+            });
         }, """
         ::1 address1
         ::2 address2
@@ -85,7 +62,7 @@ public class HostsFileTests
     }
 
     [Fact]
-    public void RemoveEntryWorks()
+    public void ModifyEntriesRemovesEntries()
     {
         DoTest("""
         ::1 address1
@@ -93,22 +70,13 @@ public class HostsFileTests
         ::1 address3
         """, env =>
         {
-            Assert.True(HostsFile.RemoveEntry(env, "address2"));
-        }, """
-        ::1 address1
-        ::1 address3
-        """);
-    }
-
-    [Fact]
-    public void RemoveEntryReturnsFalse()
-    {
-        DoTest("""
-        ::1 address1
-        ::1 address3
-        """, env =>
-        {
-            Assert.False(HostsFile.RemoveEntry(env, "address2"));
+            Assert.Equal(new Dictionary<string, string?>
+            {
+                ["address2"] = "::1"
+            }, HostsFile.ModifyEntries(env, new Dictionary<string, string?>
+            {
+                ["address2"] = null
+            }));
         }, """
         ::1 address1
         ::1 address3

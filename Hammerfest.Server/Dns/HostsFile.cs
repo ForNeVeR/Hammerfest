@@ -1,4 +1,3 @@
-using System.Text;
 using Hammerfest.Server.Env;
 
 namespace Hammerfest.Server.Dns;
@@ -9,69 +8,82 @@ namespace Hammerfest.Server.Dns;
 /// </remarks>
 public static class HostsFile
 {
-    public static string? FindIpAddress(ISystemEnvironment env, string host)
+    /// <summary>
+    ///     Overrides the local hosts file.
+    /// </summary>
+    /// <param name="env">The <see cref="ISystemEnvironment" /> to modify hosts file in</param>
+    /// <param name="valuesToSet">
+    ///     The <see cref="IReadOnlyDictionary{TKey,TValue}" /> of new DNS entries, where the key is considered the host
+    ///     and the value is considered its IP address. Null as the entry value indicates that entry is to be deleted
+    /// </param>
+    /// <returns>
+    ///     The <see cref="Dictionary{TKey,TValue}" /> of initial DNS entries, where the key is considered the host
+    ///     and the value is considered its IP address.
+    /// </returns>
+    /// <remarks>
+    ///     Null as the entries' value indicates that the value is to be deleted.
+    ///     When new entry is added (not replaced) its resulting value in the returned dictionary is null. It is needed
+    ///     to reuse the method on the rollback.
+    /// </remarks>
+    public static Dictionary<string, string?> ModifyEntries(ISystemEnvironment env, IReadOnlyDictionary<string, string?>
+        valuesToSet)
     {
-        foreach (var line in File.ReadAllLines(env.HostsFilePath))
-        {
-            if (ParseLine(line) is (var ipAddress, var currentHost) && currentHost == host)
-                return ipAddress;
-        }
+        if (valuesToSet.Count == 0) return new Dictionary<string, string?>();
 
-        return null;
-    }
-
-    public static void AddEntry(ISystemEnvironment env, string ipAddress, string host)
-    {
-        var content = File.ReadAllText(env.HostsFilePath);
-        var result = new StringBuilder(content);
-        if (content.Length > 0 && !content.EndsWith('\n'))
-            result.Append('\n');
-        result.Append($"{ipAddress} {host}\r\n");
-
-        File.WriteAllText(env.HostsFilePath, result.ToString());
-    }
-
-    public static bool RemoveEntry(ISystemEnvironment env, string host)
-    {
+        var newValues = new Dictionary<string, string?>(valuesToSet);
         var originalLines = File.ReadAllLines(env.HostsFilePath);
         var resultLines = new List<string>();
-        var removed = false;
+        var originalEntries = new Dictionary<string, string?>();
+
         foreach (var line in originalLines)
         {
-            if (ParseLine(line) is var (_, currentHost) && currentHost == host)
+            var parsedLine = ParseLine(line);
+            switch (parsedLine)
             {
-                removed = true;
+                case var (oldIp, host) when IsAlreadyPresent(host, oldIp):
+                    resultLines.Add($"{newValues[host]} {host}");
+                    newValues.Remove(host);
+                    break;
+                case var (oldIp, host) when IsReplacement(host):
+                    resultLines.Add($"{newValues[host]} {host}");
+                    originalEntries.Add(host, oldIp);
+                    newValues.Remove(host);
+                    break;
+                case var (oldIp, host) when IsDeletion(host):
+                    originalEntries.Add(host, oldIp);
+                    newValues.Remove(host);
+                    break;
+                default:
+                    resultLines.Add(line);
+                    break;
             }
-            else
-                resultLines.Add(line);
         }
 
-        if (removed)
-            File.WriteAllLines(env.HostsFilePath, resultLines);
-
-        return removed;
-    }
-
-    public static bool ReplaceEntry(ISystemEnvironment env, string ipAddress, string host)
-    {
-        var originalLines = File.ReadAllLines(env.HostsFilePath);
-        var resultLines = new List<string>();
-        var replaced = false;
-        foreach (var line in originalLines)
+        foreach (var (host, ip) in newValues)
         {
-            if (ParseLine(line) is var (_, currentHost) && currentHost == host)
-            {
-                resultLines.Add($"{ipAddress} {host}");
-                replaced = true;
-            }
-            else
-                resultLines.Add(line);
+            resultLines.Add($"{ip} {host}");
+            originalEntries.Add(host, null);
         }
 
-        if (replaced)
+        if (originalEntries.Count != 0)
             File.WriteAllLines(env.HostsFilePath, resultLines);
 
-        return replaced;
+        return originalEntries;
+
+        bool IsReplacement(string host)
+        {
+            return newValues.ContainsKey(host) && newValues[host] is not null;
+        }
+
+        bool IsDeletion(string host)
+        {
+            return newValues.ContainsKey(host) && newValues[host] is null;
+        }
+
+        bool IsAlreadyPresent(string host, string ip)
+        {
+            return newValues.TryGetValue(host, out var newIp) && newIp == ip;
+        }
     }
 
     private static ValueTuple<string, string>? ParseLine(string line)

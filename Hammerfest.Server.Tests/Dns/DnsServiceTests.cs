@@ -9,14 +9,16 @@ public sealed class DnsServiceTests : IDisposable
 {
     private readonly MockEnvironment _environment = new();
     private readonly DnsService _service;
+    private readonly string _expected;
 
     public DnsServiceTests()
     {
         _environment.HostsFilePath = Path.GetTempFileName();
         _service = new DnsService(
             NullLogger<DnsService>.Instance,
-            Options.Create(new DnsOptions { Enabled = true  }),
+            Options.Create(new DnsOptions {Enabled = true}),
             _environment);
+        _expected = string.Join("\r\n", DnsService.Domains.Select(domain => "127.0.0.1 " + domain));
     }
 
     public void Dispose()
@@ -30,9 +32,7 @@ public sealed class DnsServiceTests : IDisposable
         await _service.StartAsync(CancellationToken.None);
 
         var content = await File.ReadAllTextAsync(_environment.HostsFilePath);
-        FileAssert.ContentsEqual($"""
-        127.0.0.1 {DnsService.ServServ}
-        """, content);
+        FileAssert.ContentsEqual(_expected, content);
     }
 
     [Fact]
@@ -41,9 +41,7 @@ public sealed class DnsServiceTests : IDisposable
         await _service.StartAsync(CancellationToken.None);
 
         var content = await File.ReadAllTextAsync(_environment.HostsFilePath);
-        FileAssert.ContentsEqual($"""
-        127.0.0.1 {DnsService.ServServ}
-        """, content);
+        FileAssert.ContentsEqual(_expected, content);
 
         await _service.StopAsync(CancellationToken.None);
 
@@ -63,12 +61,12 @@ public sealed class DnsServiceTests : IDisposable
         var content = await File.ReadAllTextAsync(_environment.HostsFilePath);
         FileAssert.ContentsEqual($"""
         127.0.0.1 entry1
-        127.0.0.1 {DnsService.ServServ}
+        {_expected}
         """, content);
 
         await File.WriteAllTextAsync(_environment.HostsFilePath, $"""
         127.0.0.1 entry1
-        127.0.0.1 {DnsService.ServServ}
+        {_expected}
         127.0.0.1 something_new
         """);
 
@@ -82,24 +80,19 @@ public sealed class DnsServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task StopServiceDoesNothingIfTheEntryWasAlreadyThere()
+    public async Task StopServiceDoesNothingIfTheEntriesWereAlreadyThere()
     {
-        await File.WriteAllTextAsync(_environment.HostsFilePath, $"""
-        127.0.0.1 {DnsService.ServServ}
-        """);
+        await File.WriteAllTextAsync(_environment.HostsFilePath, _expected);
 
         await _service.StartAsync(CancellationToken.None);
 
         var content = await File.ReadAllTextAsync(_environment.HostsFilePath);
-        Assert.Equal($"""
-        127.0.0.1 {DnsService.ServServ}
-        """, content);
+
+        Assert.Equal(_expected, content);
 
         await _service.StopAsync(CancellationToken.None);
 
         content = await File.ReadAllTextAsync(_environment.HostsFilePath);
-        Assert.Equal($"""
-        127.0.0.1 {DnsService.ServServ}
-        """, content);
+        Assert.Equal(_expected, content);
     }
 }
