@@ -22,13 +22,14 @@ public record DnsService
     {
         if (!Options.Value.Enabled) return Task.CompletedTask;
 
-        var entries = Domains.ToDictionary(domain => domain, ip => ServerIp);
+        var newEntries = Domains.ToDictionary(domain => domain, ip => ServerIp);
         lock (_stateLock)
         {
-            _modifications = HostsFile.ModifyEntries(Environment, entries);
+            _modifications = HostsFile.ModifyEntries(Environment, newEntries);
         }
 
-        Logger.LogInformation("Successfully overwritten original DNS entries with the server entries.");
+        Logger.LogInformation("Successfully overwritten original DNS entries with the server entries");
+        Logger.LogDebug(string.Join(System.Environment.NewLine, newEntries));
 
         return Task.CompletedTask;
     }
@@ -40,7 +41,8 @@ public record DnsService
             _modifications = HostsFile.ModifyEntries(Environment, _modifications);
         }
 
-        Logger.LogInformation("Successfully restored overwritten DNS entries with the original entries.");
+        Logger.LogInformation("Successfully restored DNS changes");
+        Logger.LogDebug(string.Join(System.Environment.NewLine, _modifications));
 
         return Task.CompletedTask;
     }
