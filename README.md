@@ -38,9 +38,6 @@ Press `Ctrl+C` to terminate the server.
 
 Legal Disclaimers
 -----------------
-
-_Thanks to _
-
 - This project is not affiliated with or endorsed by EA in any way. Command & Conquer is a trademark of Electronic Arts.
 - This project is non-commercial. The source code is available for free and always will be.
 - This is a blackbox re-implementation project. The code in this project was written based on reading data files, and observing the game(s) running. In some cases the code was written based on specs available on the Internet.
